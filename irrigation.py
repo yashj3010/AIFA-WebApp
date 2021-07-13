@@ -1,7 +1,16 @@
 import csv
+import json
+import schedule
+
+import datetime
+import requests
 import pandas as pd
 import tensorflow as tf
+from apscheduler.schedulers.background import BackgroundScheduler
 
+
+
+import sensorValues
 
 
 irrigationModel = tf.keras.models.load_model(
@@ -24,7 +33,7 @@ def RangeScaling(val):
 min_max_values = []
 
 # ------ READING MinMaxValue Csv Created During Normalization --------
-with open(r"CSVs/Target/minMaxVals.csv", "rt") as f:
+with open(r"CSVs/minMaxVals.csv", "rt") as f:
     data = csv.reader(f)
     for row in data:
         min_max_values.append(row[0])
@@ -75,3 +84,42 @@ def irrigate(parList):
 
         # ------ Returning The Answer --------
         return str(answer)
+
+
+def manualIrrigation(params):
+    my_json_string = json.dumps(params)
+    print(params)
+    return params
+
+def smartIrrigateToday():
+    if not sensorValues.smartIrrigationToggle:
+        sched.pause_job("myjob")
+
+    params ={'irrDry': str(sensorValues.dryValue), 'irrWet': str(sensorValues.wetValue)}
+    response = requests.post(url= "http://192.168.0.113:1880/irrigatetoday",json=params)
+
+sched = BackgroundScheduler(daemon=True)
+sched.add_job(smartIrrigateToday,'interval',seconds=int(sensorValues.irrFreq),id="myjob")
+sched.start(paused=True)
+
+def smartIrrigation(params):
+    sensorValues.irrFreq = params['irrFreq']
+    sensorValues.dryValue = params['irrDry']
+    sensorValues.wetValue = params['irrWet']
+    sensorValues.smartIrrigationToggle = bool(params['irrStatus'])
+    
+    sched.resume()
+    sched.resume_job("myjob")
+    print(params)
+    return params
+
+def scheduleIrrigationDuration(params):
+    date=params['SirrigationDate'][:10]
+    time = params['SirrigationTime'][:10]
+    sensorValues.datetime = datetime.strptime(date, '%y/%m/%d')
+    print(params)
+    return params
+
+def scheduleIrrigationMoisture(params):
+    print(params)
+    return params
