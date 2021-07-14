@@ -8,10 +8,7 @@ import pandas as pd
 import tensorflow as tf
 from apscheduler.schedulers.background import BackgroundScheduler
 
-
-
 import sensorValues
-
 
 irrigationModel = tf.keras.models.load_model(
     r"Tensorflow Models\\irrigation.h5")
@@ -92,11 +89,15 @@ def manualIrrigation(params):
     return params
 
 def smartIrrigateToday():
+    irrStatus = 1
+    if not sensorValues.smartIrrigationToggle:
+        irrStatus = 0
+
+    params ={'irrDry': str(sensorValues.dryValue), 'irrWet': str(sensorValues.wetValue), 'irrStatus':str(irrStatus)}
+    response = requests.post(url= "http://192.168.0.113:1880/irrigatetoday",json=params)
+
     if not sensorValues.smartIrrigationToggle:
         sched.pause_job("myjob")
-
-    params ={'irrDry': str(sensorValues.dryValue), 'irrWet': str(sensorValues.wetValue)}
-    response = requests.post(url= "http://192.168.0.113:1880/irrigatetoday",json=params)
 
 sched = BackgroundScheduler(daemon=True)
 sched.add_job(smartIrrigateToday,'interval',seconds=int(sensorValues.irrFreq),id="myjob")

@@ -100,9 +100,9 @@ def scheduleIrrigationMoisture():
     return answer
 
 if __name__ == '__main__':
-    # http_server = WSGIServer(('0.0.0.0', 4449), app)
-    # http_server.serve_forever()
-    # app.run()
-    app.run(debug=True, host="0.0.0.0", port=4449)
+    http_server = WSGIServer(('0.0.0.0', 4449), app)
+    http_server.serve_forever()
+    app.run()
+    # app.run(debug=True, host="0.0.0.0", port=4449)
 
 
